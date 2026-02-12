@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hook A Duck 🦆
 
-## Getting Started
+A 3D-style interactive "Hook A Duck" game built with **Next.js**, **React**, **Tailwind CSS**, and **GSAP**.
 
-First, run the development server:
+## 🎮 Game Features
+- **Realistic Water Physics:** Ducks bob and float, with water ripples and splash effects.
+- **Interactive Fishing Rod:**
+    - Mouse tracking rod movement.
+    - Realistic usage of the hook and line.
+    - **Idle Animation:** Gentle swaying of the hook when not in use.
+    - **Lift Animation:** Smooth lifting mechanics with line tension visualization.
+- **Visual Effects:**
+    - **Water Drops:** Dripping water particles when a duck is lifted.
+    - **Splash:** Water column and ripple effects on pickup.
+    - **Cinematic 3D Pool:** A fully 3D-rendered pool basin with depth and reflections.
+- **Prize System:** Reveal hidden prizes behind each duck!
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🛠️ Tech Stack
+- **Framework:** [Next.js](https://nextjs.org/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+- **Animations:** [GSAP (GreenSock Animation Platform)](https://greensock.com/gsap/)
+- **Language:** TypeScript
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Getting Started
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Prerequisites
+- Node.js installed
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Installation
 
-## Learn More
+1.  Clone the repository:
+    ```bash
+    git clone https://github.com/miansalman78/Hookaduck.git
+    ```
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Run the development server:
+    ```bash
+    npm run dev
+    ```
+4.  Open [http://localhost:3000](http://localhost:3000) to play!
 
-To learn more about Next.js, take a look at the following resources:
+## 📸 Screenshots
+*(Add screenshots here)*
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 License
+This project is for educational and portfolio purposes.
