@@ -9,6 +9,7 @@ interface DuckProps {
     onClick: () => void;
     showPrize: boolean;
     prizeName?: string;
+    displayNumber?: number;
 }
 
 function Duck({
@@ -18,7 +19,8 @@ function Duck({
     isDisabled,
     onClick,
     showPrize,
-    prizeName
+    prizeName,
+    displayNumber
 }: DuckProps) {
     const duckRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +40,7 @@ function Duck({
             ref={duckRef}
             className={`duck-container relative cursor-pointer transition-all ${isDisabled && !isSelected ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
+            style={{ willChange: 'transform' }}
             onClick={!isDisabled ? onClick : undefined}
         >
             {/* Bobbing and Floating Animation Wrapper */}
@@ -73,6 +76,17 @@ function Duck({
                             className="w-full h-full object-contain drop-shadow-lg scale-125 translate-y-[-10px]"
                             style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }}
                         />
+
+                        {/* NUMBER TAG - styled to match reference image */}
+                        {displayNumber && (
+                            <div className="absolute top-[45%] left-[50%] -translate-x-1/2 -translate-y-1/2 z-10">
+                                <div className="bg-white border-[1.5px] border-black/80 rounded-md px-1 py-0 shadow-sm flex items-center justify-center min-w-[20px]">
+                                    <span className="text-black font-extrabold text-[10px] leading-tight select-none">
+                                        {displayNumber}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     // Back of duck (prize reveal)
