@@ -25,7 +25,6 @@ const FishingRod = memo(forwardRef<FishingRodRef, FishingRodProps>(
 
                 const rodContainer = rodRef.current.parentElement?.parentElement;
                 if (!rodContainer) return;
-                if (!rodContainer) return;
 
                 // KILL IDLE ANIMATION when active
                 gsap.killTweensOf(rodRef.current);
@@ -36,10 +35,6 @@ const FishingRod = memo(forwardRef<FishingRodRef, FishingRodProps>(
                 const rotationAngle = 5 + (targetY / 60);
 
                 // Move arm and rod to aim at target
-                // We pivot from the left edge
-                // Calculate arm movement needed to align line (at offset 420) with targetX
-                // ArmBase (20) + ArmMove (x) + LineOffset (420) = TargetX
-                // x = TargetX - 440
                 timeline.to(armRef.current, {
                     x: targetX - 440,
                     y: targetY * 0.1, // Reduced vertical movement
@@ -56,9 +51,6 @@ const FishingRod = memo(forwardRef<FishingRodRef, FishingRodProps>(
                 }, '<'); // Run at start of previous animation
 
                 // Update line and hook sync
-                // Adjust height based on new top start position (approx 210px)
-                // Duck Top is roughly targetY - 50px. Rod start is 210px.
-                // Length = (targetY - 50) - 210 = targetY - 260.
                 const lineTargetHeight = targetY - 260;
 
                 timeline.to(lineRef.current, {
@@ -81,8 +73,8 @@ const FishingRod = memo(forwardRef<FishingRodRef, FishingRodProps>(
 
                 const timeline = gsap.timeline();
 
-                // Retract line - Bring it much higher up to validity "lift" the duck out
-                const RETRACTED_HEIGHT = 40; // Short enough to bring duck near ring
+                // Retract line
+                const RETRACTED_HEIGHT = 40;
 
                 timeline.to([lineRef.current, hookRef.current], {
                     height: RETRACTED_HEIGHT,
@@ -174,9 +166,7 @@ const FishingRod = memo(forwardRef<FishingRodRef, FishingRodProps>(
                             style={{ transformOrigin: 'left center' }}
                         />
 
-                        {/* 
-                            Hook/Ring - Always visible at rod tip
-                        */}
+                        {/* Hook/Ring - Always visible at rod tip */}
                         <div className="absolute z-10 left-[400px] top-[155px]">
                             {/* The Ring Hook - Always visible */}
                             <div className="flex flex-col items-center">
@@ -192,20 +182,17 @@ const FishingRod = memo(forwardRef<FishingRodRef, FishingRodProps>(
                             </div>
                         </div>
 
-                        {/* 
-                            Functional Line - Always visible hanging part
-                        */}
+                        {/* Functional Line - Always visible hanging part */}
                         <div
                             ref={rodRef}
                             className="absolute z-10 w-0 h-0 left-[420px] top-[210px] overflow-visible"
                         >
-                            {/* Line hanging from the assembly point */}
                             <div className="absolute left-0 top-0 w-0 h-0 origin-top pointer-events-none flex justify-center">
-                                {/* Visual Line (Fishing line) - STRIP STYLE */}
+                                {/* Visual Line (Fishing line) */}
                                 <div
                                     ref={lineRef}
                                     className="w-[8px] h-[80px] bg-gradient-to-b from-yellow-600 to-yellow-400 border-x border-yellow-700 shadow-[2px_0_4px_rgba(0,0,0,0.5)] rounded-b-md"
-                                    style={{ transformOrigin: 'top center' }}
+                                    style={{ transformOrigin: 'top center', willChange: 'height' }}
                                 ></div>
 
                                 {/* Hook at end of line (for duck attachment) */}
@@ -216,9 +203,9 @@ const FishingRod = memo(forwardRef<FishingRodRef, FishingRodProps>(
                                     {/* Small knot/connector at end of line */}
                                     <div className="w-3 h-3 bg-yellow-600 rounded-full mb-[-2px]"></div>
 
-                                    {/* Hooked Duck Attachment Point */}
+                                    {/* Hooked Duck Attachment Point - Shifted down to align hook with head */}
                                     {hookedDuck && (
-                                        <div className="relative transform scale-125 origin-top drop-shadow-[0_30px_30px_rgba(0,0,0,0.6)]">
+                                        <div className="relative transform scale-125 translate-y-[15px] origin-top drop-shadow-[0_30px_30px_rgba(0,0,0,0.6)]">
                                             {hookedDuck}
 
                                             {/* Water Drops Effect - Falling from the duck */}
@@ -235,17 +222,6 @@ const FishingRod = memo(forwardRef<FishingRodRef, FishingRodProps>(
                                                     ></div>
                                                 ))}
                                             </div>
-
-                                            {/* CSS for drops */}
-                                            <style jsx>{`
-                                                @keyframes dropFall {
-                                                    0% { transform: translateY(0) scale(1); opacity: 0.8; }
-                                                    100% { transform: translateY(150px) scale(0.5); opacity: 0; }
-                                                }
-                                                .animate-drop-fall {
-                                                    animation: dropFall infinite linear;
-                                                }
-                                            `}</style>
                                         </div>
                                     )}
                                 </div>
@@ -259,5 +235,4 @@ const FishingRod = memo(forwardRef<FishingRodRef, FishingRodProps>(
 ));
 
 FishingRod.displayName = 'FishingRod';
-
 export default FishingRod;

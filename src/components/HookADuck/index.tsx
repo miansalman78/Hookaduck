@@ -57,6 +57,8 @@ export default function HookADuckGame() {
     const fishingRodRef = useRef<FishingRodRef>(null);
     const animationRef = useRef<number | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
+    const soundRef = useRef<HTMLAudioElement>(null);
+    const bgMusicRef = useRef<HTMLAudioElement>(null);
     const duckRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     // Use refs for high-frequency physics to avoid re-renders
@@ -77,11 +79,39 @@ export default function HookADuckGame() {
         };
     }));
 
-    // Set video playback rate for normal speed
+    // Ensure video loops seamlessly and stays playing
     useEffect(() => {
-        if (videoRef.current) {
-            videoRef.current.playbackRate = 1.0;
-        }
+        const video = videoRef.current;
+        if (!video) return;
+
+        video.playbackRate = 1.0;
+
+        const handleTimeUpdate = () => {
+            // "Buffer" loop: Reset slightly before the absolute end to avoid browser stutter
+            // User requested: "video end go hi na" (don't let it reach the end)
+            if (video.duration && video.currentTime > video.duration - 0.2) {
+                video.currentTime = 0;
+                video.play();
+            }
+        };
+
+        // Aggressive playback enforcement
+        const ensurePlaying = () => {
+            if (video.paused && video.readyState >= 2) {
+                video.play().catch(() => { });
+            }
+        };
+
+        video.addEventListener('timeupdate', handleTimeUpdate);
+        video.addEventListener('pause', ensurePlaying);
+
+        // Force play on mount
+        ensurePlaying();
+
+        return () => {
+            video.removeEventListener('timeupdate', handleTimeUpdate);
+            video.removeEventListener('pause', ensurePlaying);
+        };
     }, []);
 
     // Ensure component is mounted (client-side only)
@@ -165,7 +195,7 @@ export default function HookADuckGame() {
                 const time = performance.now() * 0.002;
                 const waveRotation = Math.sin(time + index) * 5;
 
-                el.style.transform = `translate(calc(-50% + ${duck.x}px), calc(-50% + ${duck.y}px)) rotateX(-90deg) rotateY(${waveRotation}deg) scale(${scale}) scaleX(${duck.facingLeft ? 1 : -1})`;
+                el.style.transform = `translate3d(calc(-50% + ${duck.x}px), calc(-50% + ${duck.y}px), 0) rotateX(-90deg) rotateY(${waveRotation}deg) scale(${scale}) scaleX(${duck.facingLeft ? 1 : -1})`;
                 el.style.zIndex = zIndex.toString();
             });
 
@@ -188,6 +218,11 @@ export default function HookADuckGame() {
         setSelectedDuckId(duckId);
         setIsDuckOnHook(false);
 
+        // Pause background music when duck is picked
+        if (bgMusicRef.current) {
+            bgMusicRef.current.pause();
+        }
+
         await new Promise(resolve => setTimeout(resolve, 500));
 
         const duckElement = duckRefs.current[duckIndex];
@@ -197,10 +232,18 @@ export default function HookADuckGame() {
         const duckRect = duckElement.getBoundingClientRect();
         const rodRect = rodElement.getBoundingClientRect();
 
+        // Aim for the duck's head area (approx 15px from the top)
         const targetX = (duckRect.left + duckRect.width / 2) - rodRect.left;
-        const targetY = (duckRect.top + duckRect.height / 2) - rodRect.top;
+        const targetY = (duckRect.top + 15) - rodRect.top;
 
         setGameState('hooking');
+
+        // Play drum sound effect
+        if (soundRef.current) {
+            soundRef.current.currentTime = 0;
+            soundRef.current.play().catch(e => console.log('Audio play failed:', e));
+        }
+
         if (fishingRodRef.current) {
             await fishingRodRef.current.animateToTarget(targetX, targetY);
 
@@ -238,6 +281,17 @@ export default function HookADuckGame() {
         setRevealedPrize(null);
         setShowPrizeModal(false);
 
+        // Stop selection sound effect
+        if (soundRef.current) {
+            soundRef.current.pause();
+            soundRef.current.currentTime = 0;
+        }
+
+        // Resume background music
+        if (bgMusicRef.current) {
+            bgMusicRef.current.play().catch(e => console.log('BG Music resume failed:', e));
+        }
+
         if (fishingRodRef.current) {
             fishingRodRef.current.reset();
         }
@@ -245,6 +299,15 @@ export default function HookADuckGame() {
 
     return (
         <div className="relative w-full h-screen overflow-hidden bg-transparent">
+            {/* Game Title Badge */}
+            <div className="absolute top-8 left-8 z-[60] pointer-events-none select-none animate-badge-in">
+                <div className="bg-white/95 backdrop-blur-md px-6 py-3 rounded-2xl shadow-xl border border-black/10">
+                    <h1 className="text-base md:text-xl font-black text-black uppercase tracking-tight">
+                        Pick your duck <span className="text-orange-600 font-bold">to reveal your prize</span>
+                    </h1>
+                </div>
+            </div>
+
             {/* Background Video */}
             <video
                 ref={videoRef}
@@ -252,14 +315,18 @@ export default function HookADuckGame() {
                 loop
                 muted
                 playsInline
-                className="fixed inset-0 w-full h-full object-cover z-[-1]"
+                className="absolute inset-0 w-full h-full object-cover z-0"
             >
                 <source src="/background.mp4" type="video/mp4" />
                 Your browser does not support the video tag.
             </video>
 
+            {/* Sound Effect */}
+            <audio ref={soundRef} src="/music.mpeg" preload="auto" />
+            <audio ref={bgMusicRef} src="/bgmusic.mpeg" preload="auto" loop autoPlay />
+
             {/* Cinematic 3D Stage */}
-            <div className="relative w-full h-full [perspective:1400px]">
+            <div className="relative w-full h-full [perspective:1400px] z-10">
                 <FishingRod
                     ref={fishingRodRef}
                     isActive={gameState !== 'idle'}
@@ -274,6 +341,7 @@ export default function HookADuckGame() {
                                     onClick={() => { }}
                                     showPrize={gameState === 'revealing' || gameState === 'complete'}
                                     prizeName={revealedPrize?.name}
+                                    displayNumber={DUCKS_DATA.findIndex(d => d.id === selectedDuckId) + 1}
                                 />
                             </div>
                         ) : null
@@ -292,29 +360,28 @@ export default function HookADuckGame() {
                 >
                     {/* OUTER WALL BASE (The very bottom floor) */}
                     <div
-                        className="absolute inset-0 rounded-full bg-[#b71c1c] shadow-[0_50px_100px_rgba(0,0,0,0.8)]"
+                        className="absolute inset-0 rounded-full bg-[#e65100] shadow-[0_50px_100px_rgba(0,0,0,0.8)]"
                         style={{
                             transform: 'translateZ(-110px)',
-                            background: '#b71c1c' // Explicit solid color
+                            background: '#511f00ff' // Darker orange
                         }}
                     ></div>
 
-                    {/* RED CYLINDER SIDE: Re-introducing stacked rings to create a solid wall */}
-                    {/* Increased density (20 rings) to ensure no gaps are visible at any angle */}
+                    {/* DARK ORANGE CYLINDER SIDE: Stacking rings to create a solid wall */}
                     {Array.from({ length: 20 }).map((_, i) => (
                         <div
                             key={i}
-                            className="absolute inset-0 rounded-full border-[80px] border-[#b71c1c]"
+                            className="absolute inset-0 rounded-full border-[80px] border-[#e65100]"
                             style={{
                                 transform: `translateZ(-${i * 5.5}px)`,
-                                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.1), 0 0 1px #b71c1c',
+                                boxShadow: 'inset 0 0 10px rgba(0, 0, 0, 0.69), 0 0 1px #e65100',
                                 background: 'transparent'
                             }}
                         ></div>
                     ))}
 
                     {/* THE TOP RIM */}
-                    <div className="absolute inset-0 rounded-full border-[80px] border-[#e65100] shadow-[0_10px_0_#bf360c,inset_0_5px_15px_rgba(0,0,0,0.3)] z-50">
+                    <div className="absolute inset-0 rounded-full border-[80px] border-[#fb8c00] shadow-[0_10px_0_#ef6c00,inset_0_5px_15px_rgba(0,0,0,0.3)] z-50">
                         <div className="absolute inset-[-10px] rounded-full border-[10px] border-white/10 filter blur-[4px]"></div>
                         <div className="absolute inset-[-10px] rounded-full border-t-[14px] border-white/20 filter blur-[3px] opacity-90"></div>
                         <div className="absolute inset-[-0px] rounded-full shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] pointer-events-none"></div>
@@ -322,7 +389,7 @@ export default function HookADuckGame() {
 
                     {/* INNER BASIN */}
                     <div
-                        className="absolute inset-[80px] rounded-full border-[15px] border-[#bf360c] z-40 shadow-[inset_0_30px_80px_rgba(0,0,0,0.9)]"
+                        className="absolute inset-[80px] rounded-full border-[15px] border-[#e65100] z-40 shadow-[inset_0_30px_80px_rgba(0,0,0,0.9)]"
                         style={{
                             transform: 'translateZ(-1px)',
                             height: 'calc(100% - 80px)',
@@ -353,25 +420,6 @@ export default function HookADuckGame() {
                                     ))}
                                 </div>
                             </div>
-
-                            <style jsx>{`
-                                @keyframes poolWave {
-                                   0% { width: 0; height: 0; opacity: 0.5; border-width: 5px; }
-                                   100% { width: 800px; height: 800px; opacity: 0; border-width: 0px; }
-                                }
-                                .animate-pool-wave {
-                                   animation: poolWave 5s linear infinite;
-                                   box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-                                }
-                                @keyframes splashUp {
-                                    0% { transform: translate(-50%, -50%) scale(0); opacity: 0.8; height: 0; }
-                                    50% { opacity: 1; height: 60px; }
-                                    100% { transform: translate(-50%, -60%) scale(1.5); opacity: 0; height: 80px; }
-                                }
-                                .splash-water {
-                                    animation: splashUp 0.8s ease-out forwards;
-                                }
-                            `}</style>
 
                             {/* Splash Effect */}
                             {splashPosition && (
@@ -417,6 +465,7 @@ export default function HookADuckGame() {
                                         onClick={() => handleDuckClick(duck.id, index)}
                                         showPrize={selectedDuckId === duck.id && gameState === 'revealing'}
                                         prizeName={revealedPrize?.name}
+                                        displayNumber={index + 1}
                                     />
                                 </div>
                             ))}
@@ -442,6 +491,6 @@ export default function HookADuckGame() {
                     onClose={resetGame}
                 />
             </div>
-        </div>
+        </div >
     );
 }
